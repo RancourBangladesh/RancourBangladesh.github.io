@@ -1,0 +1,130 @@
+<!-- templates/admin_login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Cartup CxP Roster</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+  <div class="admin-login-container">
+    <div class="admin-login-card">
+      <div class="admin-login-header">
+        <h1>🛒 Cartup CxP Admin Panel</h1>
+        <p>Team Lead & Administrator Access</p>
+      </div>
+      
+      <form id="adminLoginForm" class="admin-login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" class="login-btn">
+          <span>🔐</span> Login to Admin Panel
+        </button>
+      </form>
+      
+      <div id="loginMessage" class="login-message"></div>
+      
+      <div class="login-footer">
+        <p>Return to <a href="/">Main Roster Viewer</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginForm = document.getElementById('adminLoginForm');
+      const loginMessage = document.getElementById('loginMessage');
+      
+      function showLoginMessage(message, type) {
+        if (loginMessage) {
+          loginMessage.textContent = message;
+          loginMessage.className = `login-message ${type}`;
+          loginMessage.style.display = 'block';
+        }
+      }
+      
+      if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const username = document.getElementById('username').value.trim();
+          const password = document.getElementById('password').value;
+          const submitBtn = loginForm.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          
+          if (loginMessage) {
+            loginMessage.textContent = '';
+            loginMessage.className = 'login-message';
+            loginMessage.style.display = 'none';
+          }
+          
+          if (!username || !password) {
+            showLoginMessage('Please enter both username and password', 'error');
+            return;
+          }
+          
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>⏳</span> Logging in...';
+          
+          try {
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            
+            const response = await fetch('/admin/login', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              showLoginMessage('Login successful! Redirecting...', 'success');
+              setTimeout(() => {
+                window.location.href = '/admin/dashboard';
+              }, 1000);
+            } else {
+              showLoginMessage(result.error || 'Invalid credentials', 'error');
+            }
+          } catch (error) {
+            console.error('Login error:', error);
+            showLoginMessage('Login failed. Please check your connection and try again.', 'error');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>🔐</span> Login to Admin Panel';
+          }
+        });
+      }
+      
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      
+      if (usernameInput) {
+        usernameInput.addEventListener('input', () => {
+          if (loginMessage) {
+            loginMessage.style.display = 'none';
+          }
+        });
+      }
+      
+      if (passwordInput) {
+        passwordInput.addEventListener('input', () => {
+          if (loginMessage) {
+            loginMessage.style.display = 'none';
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

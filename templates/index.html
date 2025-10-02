@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> 🛒 Cartup CxP Roster Viewer 🛒</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+  
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+  
+  <style>
+    /* Hide everything until auth is checked */
+    body {
+      visibility: hidden;
+    }
+
+    /* Dashboard Styles */
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border: 1px solid #e1e5e9;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.active {
+      border-color: #007bff;
+    }
+
+    .stat-card-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .stat-icon {
+      font-size: 2em;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 50%;
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #2c3e50;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .stat-subtitle {
+      font-size: 0.9em;
+      color: #6c757d;
+    }
+
+    .stat-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      border-top: 1px solid #e9ecef;
+      margin-top: 15px;
+      padding-top: 15px;
+    }
+
+    .stat-card.active .stat-details {
+      max-height: 300px;
+    }
+
+    .details-header {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 0.95em;
+    }
+
+    .details-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .holiday-item,
+    .shift-change-item,
+    .detail-item,
+    .timeoff-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #f8f9fa;
+    }
+
+    .holiday-item:last-child,
+    .shift-change-item:last-child,
+    .detail-item:last-child,
+    .timeoff-item:last-child {
+      border-bottom: none;
+    }
+
+    .holiday-date,
+    .shift-change-date,
+    .detail-date,
+    .timeoff-date {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9em;
+    }
+
+    .holiday-name,
+    .shift-change-info,
+    .detail-shift,
+    .timeoff-type {
+      color: #6c757d;
+      font-size: 0.85em;
+      margin-top: 2px;
+    }
+
+    .detail-shift.work {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 20px;
+      font-size: 0.9em;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .dashboard-stats {
+        grid-template-columns: 1fr;
+      }
+      
+      .stat-card {
+        padding: 15px;
+      }
+      
+      .stat-number {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Authentication Screen (Shows First) -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h1>🛒 Cartup CxP Roster Viewer</h1>
+        <p class="subtitle">Secure Team Access Portal</p>
+      </div>
+      
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h2>🔐 Team Authentication Required</h2>
+          <p>Please verify your identity to access the roster</p>
+        </div>
+        
+        <form id="authForm" class="auth-form">
+          <div class="form-group">
+            <label for="userFullName">Full Name</label>
+            <input type="text" id="userFullName" placeholder="Enter your full name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="userEmployeeId">Employee ID</label>
+            <input type="text" id="userEmployeeId" placeholder="SLL-XXXXX" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="userPassword">Team Password</label>
+            <input type="password" id="userPassword" placeholder="Enter team password" required>
+            <div class="password-hint">
+              Contact your Team Lead for the password
+            </div>
+          </div>
+          
+          <div class="auth-actions">
+            <button type="submit" class="auth-btn primary">
+              <span>🔓</span> Access Roster
+            </button>
+          </div>
+        </form>
+        
+        <div id="authMessage" class="auth-message"></div>
+        
+        <div class="auth-footer">
+          <p>Need access? Contact your Team Lead or Administrator</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application (Hidden until authenticated) -->
+  <div id="appScreen" class="app-screen">
+    <div class="container">
+      <header>
+        <h1>🛒 Cartup CxP Roster Viewer 🛒</h1>
+        <p class="subtitle">Made By Efat Anan Shekh</p>
+      </header>
+      
+      <div class="app-container">
+        <div class="app-header">
+          <div>
+            <h2>View Employee Shifts</h2>
+            <div class="user-info" id="userInfo">
+              <span>Welcome, <strong id="userName"></strong></span>
+              <div class="user-actions">
+                <button class="logout-btn" onclick="AUTH.logout()">Logout</button>
+              </div>
+            </div>
+          </div>
+          <div class="sync-controls">
+            <button class="sync-btn" id="manualSyncBtn">
+              <span>🔄</span> Update Now
+            </button>
+            <div class="sync-status" id="syncStatus">
+              <span>⏳</span> Last updated: <span id="lastUpdated">Never</span>
+            </div>
+            <div class="auto-sync-toggle">
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoSyncToggle">
+                <span class="toggle-slider"></span>
+              </label>
+              <span>Auto-sync (30s)</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="app-content">
+          <div id="loadingMessage" class="loading">
+            Loading roster data from Admin Panel...
+          </div>
+          
+          <div id="errorMessage" class="error-message" style="display: none;">
+            Error loading roster data. Please check your internet connection and try again.
+            <button class="refresh-btn" id="retryBtn">Retry</button>
+          </div>
+          
+          <div id="appContent" style="display: none;">
+            <div class="shift-select-container">
+              <button class="shift-select-btn" id="shiftSelectBtn">
+                <span>📅</span> Select Shift to View Employees
+              </button>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="teamSelect">Category (Optional)</label>
+                <select id="teamSelect">
+                  <option value="">-- All Categories --</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="empSelect">Employee (Optional)</label>
+                <select id="empSelect">
+                  <option value="">-- All Employees --</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group search-container">
+                <label for="searchInput">Search by Name or ID (Recommended)</label>
+                <input type="text" id="searchInput" placeholder="Enter name or employee ID...">
+                <div class="search-results" id="searchResults"></div>
+              </div>
+            </div>
+            
+            <div class="shifts-panel" id="shiftsPanel" style="display:none;">
+              <div class="employee-header">
+                <div>
+                  <div class="employee-name" id="empName">Employee Name</div>
+                  <div class="employee-id" id="empId">Employee ID</div>
+                </div>
+                <div class="employee-category" id="empCategory">Current Category</div>
+              </div>
+              
+              <div class="shift-row">
+                <div class="shift-label" id="todayLabel">Today:</div>
+                <div class="shift-code work" id="todayShift">9 AM – 6 PM</div>
+                <div class="shift-original" id="todayOriginal" style="display: none;"></div>
+              </div>
+              
+              <div class="shift-row">
+                <div class="shift-label" id="tomorrowLabel">Tomorrow:</div>
+                <div class="shift-code off" id="tomorrowShift">OFF</div>
+                <div class="shift-original" id="tomorrowOriginal" style="display: none;"></div>
+              </div>
+              
+              <div class="calendar-container" id="calendarContainer">
+                <button class="calendar-btn" id="calendarToggleBtn">
+                  <span>📅</span> Check Shift for Specific Date
+                </button>
+                
+                <div class="calendar" id="calendar" style="display: none;">
+                  <div class="calendar-header">
+                    <button id="prev-month">‹</button>
+                    <h3 id="current-month">September 2023</h3>
+                    <button id="next-month">›</button>
+                  </div>
+                  
+                  <div class="calendar-grid" id="calendar-dates"></div>
+                </div>
+                
+                <div class="shift-result" id="shiftResult" style="display: none;">
+                  <h3>Shift for Selected Date</h3>
+                  <div class="shift-time" id="shiftDisplay">-</div>
+                  <div class="shift-original" id="shiftOriginal" style="display: none;"></div>
+                </div>
+              </div>
+              
+              <div class="note">
+                If a date column isn't found in the sheet headers, the shift shows <em>N/A</em>.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Statistics -->
+      <div class="dashboard-stats">
+   
+
+
+        <div class="stat-card" id="upcomingShiftsCard">
+          <div class="stat-card-header">
+            <div class="stat-icon">📅</div>
+            <div class="stat-content">
+              <div class="stat-number" id="upcomingShiftsCount">0</div>
+              <div class="stat-label">Upcoming Work Days</div>
+              <div class="stat-subtitle">Next 30 days</div>
+            </div>
+          </div>
+          <div class="stat-details" id="upcomingShiftsDetails">
+            <div class="details-header">Work Schedule</div>
+            <div class="details-list" id="upcomingShiftsList">
+              <div class="empty-state">Loading work days...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card" id="timeOffCard">
+          <div class="stat-card-header">
+            <div class="stat-icon">🏖️</div>
+            <div class="stat-content">
+              <div class="stat-number" id="timeOffCount">0</div>
+              <div class="stat-label">Planned Time Off</div>
+              <div class="stat-subtitle">Your leaves</div>
+            </div>
+          </div>
+          <div class="stat-details" id="timeOffDetails">
+            <div class="details-header">Time Off Schedule</div>
+            <div class="details-list" id="timeOffList">
+              <div class="empty-state">Loading time off...</div>
+            </div>
+          </div>
+        
+
+</div>
+
+
+        <div class="stat-card" id="shiftChangesCard">
+          <div class="stat-card-header">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-content">
+              <div class="stat-number" id="shiftChangesCount">0</div>
+              <div class="stat-label">Shift Changes</div>
+              <div class="stat-subtitle">Your schedule</div>
+            </div>
+          </div>
+          <div class="stat-details" id="shiftChangesDetails">
+            <div class="details-header">Modified Shifts</div>
+            <div class="details-list" id="shiftChangesList">
+              <div class="empty-state">Loading shift changes...</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      <!-- Shift Selection Modal -->
+      <div class="shift-modal" id="shiftModal">
+        <div class="shift-modal-content">
+          <div class="shift-modal-header">
+            <div class="shift-modal-title">Select Shift to View Employees</div>
+            <button class="shift-modal-close" id="shiftModalClose">&times;</button>
+          </div>
+          <div class="shift-modal-body">
+            <div class="shift-options" id="shiftOptions"></div>
+            <div id="shiftEmployeesContainer">
+              <div class="no-employees" id="noEmployeesMessage">
+                Select a shift to view employees scheduled for today
+              </div>
+              <div class="shift-employees-list" id="shiftEmployeesList" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <p>CxP Roster Viewer | Roster Made Easy | v2.0.0</p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/data-loader.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <script>
+    // Initialize auth IMMEDIATELY when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show body only after auth check
+      document.body.style.visibility = 'visible';
+      
+      // Initialize authentication - this will show the correct screen
+      if (typeof AUTH !== 'undefined') {
+        AUTH.init();
+      } else {
+        console.error('AUTH is not defined. Check if auth.js loaded correctly.');
+        // Fallback: show auth screen if AUTH fails to load
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('appScreen').style.display = 'none';
+      }
+    });
+
+    // Add click handlers for dashboard cards
+    document.addEventListener('click', function(e) {
+      const statCard = e.target.closest('.stat-card');
+      if (statCard) {
+        // Toggle active class
+        const isActive = statCard.classList.contains('active');
+        
+        // Remove active class from all cards
+        document.querySelectorAll('.stat-card').forEach(card => {
+          card.classList.remove('active');
+        });
+        
+        // Toggle current card if it wasn't active
+        if (!isActive) {
+          statCard.classList.add('active');
+        }
+      }
+    });
+  </script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/schedule-requests.css') }}">
+<script src="{{ url_for('static', filename='js/schedule-requests.js') }}"></script>
+
+</body>
+</html>

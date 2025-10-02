@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Cartup CxP Roster</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/schedule-requests.css') }}">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="admin-header-content">
+        <h1>🛒 Cartup CxP Admin Panel</h1>
+        <div class="admin-user-info">
+          <span>Welcome, <strong id="adminUsername">Admin</strong></span>
+          <a href="{{ url_for('admin_logout') }}" class="logout-btn">Logout</a>
+        </div>
+      </div>
+    </header>
+
+<!-- Navigation -->
+<nav class="admin-nav">
+  <button class="nav-btn active" data-tab="data-sync">Data Sync</button>
+  <button class="nav-btn" data-tab="google-links">Google Sheets Links</button>
+  <button class="nav-btn" data-tab="team-management">Team Management</button>
+  <button class="nav-btn" data-tab="schedule-requests">📋 Schedule Requests</button>
+  <button class="nav-btn" data-tab="google-data">Google Data</button>
+  <button class="nav-btn" data-tab="admin-data">Admin Data</button>
+  <button class="nav-btn" data-tab="csv-import">CSV Import</button>
+</nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <!-- Data Sync Tab -->
+      <div id="data-sync" class="tab-content active">
+        <div class="tab-header">
+          <h2>Data Sync Management</h2>
+          <p>Sync data from Google Sheets and manage data sources</p>
+        </div>
+        
+        <div class="sync-controls-card">
+          <div class="sync-section">
+            <h3>🔄 Google Sheets Sync</h3>
+            <p>Sync latest data from Google Sheets to the system</p>
+            <button id="syncGoogleSheets" class="sync-btn">
+              <span>🔄</span> Sync Google Sheets Now
+            </button>
+            
+            <!-- Auto-sync Controls -->
+            <div class="auto-sync-controls">
+              <div class="auto-sync-toggle">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="autoSyncToggle">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span>Enable Auto-Sync (30 seconds)</span>
+              </div>
+              <div class="sync-status" id="autoSyncStatus">Auto-sync: Disabled</div>
+            </div>
+            
+            <div class="sync-status-info">
+              <p>Auto-sync will automatically fetch data from Google Sheets every 30 seconds. This setting is saved in your browser and persists across sessions.</p>
+            </div>
+            
+            <div class="sync-status">
+              <strong>Google Data:</strong> 
+              <span id="googleDataStatus">Not loaded</span>
+            </div>
+          </div>
+          
+          <div class="sync-section">
+            <h3>🔄 Data Reset</h3>
+            <p>Reset admin modifications to match Google Sheets data</p>
+            <button id="resetToGoogle" class="reset-btn">
+              <span>↩️</span> Reset to Google Data
+            </button>
+            <div class="sync-status">
+              <strong>Admin Data:</strong> 
+              <span id="adminDataStatus">Not modified</span>
+            </div>
+          </div>
+          
+          <div class="data-stats">
+            <h3>📊 Data Statistics</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="totalEmployees">0</div>
+                <div class="stat-label">Total Employees</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="totalTeams">0</div>
+                <div class="stat-label">Total Teams</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="totalDates">0</div>
+                <div class="stat-label">Date Columns</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="modifiedShifts">0</div>
+                <div class="stat-label">Modified Shifts</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modified Shifts Tracking Section -->
+          <div class="modified-shifts-section">
+            <h3>📝 Modified Shifts Tracking</h3>
+            <div class="modified-shifts-stats">
+              <div class="stat-card clickable" id="modifiedShiftsCard">
+                <div class="stat-value" id="totalModifiedShifts">0</div>
+                <div class="stat-label">Modified Shifts This Month</div>
+                <div class="stat-subtext" id="modifiedEmployees">0 employees affected</div>
+              </div>
+              <div class="stat-card clickable" id="userModificationsCard">
+                <div class="stat-value" id="userModifications">0</div>
+                <div class="stat-label">Your Modifications</div>
+                <div class="stat-subtext" id="userRank">Rank: -</div>
+              </div>
+            </div>
+            
+            <div class="modified-shifts-details" id="modifiedShiftsDetails" style="display: none;">
+              <h4>Recent Modified Shifts - <span id="currentMonthDisplay"></span></h4>
+              <div class="modifications-list" id="modificationsList">
+                <!-- Modified shifts will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Sheets Links Tab -->
+      <div id="google-links" class="tab-content">
+        <div class="tab-header">
+          <h2>Google Sheets Links Management</h2>
+          <p>Manage Google Sheets links for different months</p>
+        </div>
+        
+        <div class="google-links-panel">
+          <div class="links-controls">
+            <button id="addGoogleLinkBtn" class="action-btn primary">+ Add New Month Link</button>
+          </div>
+          
+          <div class="links-list" id="linksList">
+            <!-- Google Sheets links will be populated here -->
+          </div>
+          
+          <div class="links-info">
+            <h3>📋 How to Use</h3>
+            <ul>
+              <li>Add Google Sheets links for different months</li>
+              <li>Use the "Sync Google Sheets Now" button to load data</li>
+              <li>Green checkmark indicates successful sync</li>
+              <li>Red cross indicates sync failed or not attempted</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Management Tab -->
+      <div id="team-management" class="tab-content">
+        <div class="tab-header">
+          <h2>Team & Employee Management</h2>
+          <p>Add, edit, or delete teams and employees</p>
+        </div>
+        
+        <div class="team-management-panel">
+          <div class="management-section">
+            <h3>🏢 Team Management</h3>
+            <div class="team-controls">
+              <button id="addTeamBtn" class="action-btn primary">+ Add New Team</button>
+            </div>
+            
+            <div class="teams-list" id="teamsList">
+              <!-- Teams will be populated here -->
+            </div>
+          </div>
+          
+          <div class="management-section">
+            <h3>👥 Employee Management</h3>
+            <div class="employee-controls">
+              <button id="addEmployeeBtn" class="action-btn primary">+ Add New Employee</button>
+              <select id="employeeTeamFilter">
+                <option value="">Filter by Team</option>
+              </select>
+            </div>
+            
+            <div class="employees-list" id="employeesList">
+              <!-- Employees will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+<!-- Schedule Requests Tab -->
+<div id="schedule-requests" class="tab-content">
+  <div class="tab-header">
+    <h2>Schedule Change Requests</h2>
+    <p>Manage shift change and swap requests from employees</p>
+  </div>
+  
+  <div class="schedule-requests-panel">
+    <div class="requests-stats">
+      <div class="stat-card">
+        <div class="stat-value" id="pendingRequestsCount">0</div>
+        <div class="stat-label">Pending Requests</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="approvedRequestsCount">0</div>
+        <div class="stat-label">Approved This Month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalShiftChanges">0</div>
+        <div class="stat-label">Total Shift Changes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalSwaps">0</div>
+        <div class="stat-label">Total Swaps</div>
+      </div>
+    </div>
+
+    <div class="requests-controls">
+      <button id="refreshRequests" class="refresh-btn">🔄 Refresh</button>
+      <div class="requests-filter">
+        <select id="requestsFilter">
+          <option value="all">All Requests</option>
+          <option value="shift_change">Shift Changes</option>
+          <option value="swap">Swaps</option>
+          <option value="pending">Pending Only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="requests-list" id="requestsList">
+      <div class="loading-message">Loading requests...</div>
+    </div>
+  </div>
+</div>
+
+
+      <!-- Google Data Tab -->
+      <div id="google-data" class="tab-content">
+        <div class="tab-header">
+          <h2>Google Sheets Data (Read-Only)</h2>
+          <p>Original data synced from Google Sheets - This data is read-only</p>
+        </div>
+        
+        <div class="data-source-info">
+          <div class="source-badge google-badge">Google Sheets Source</div>
+          <p>This data is automatically synced from Google Sheets and cannot be modified directly.</p>
+        </div>
+        
+        <div class="month-navigation">
+          <button id="prevMonthGoogle" class="month-nav-btn">← Previous Month</button>
+          <h3 id="currentMonthGoogle">January 2024</h3>
+          <button id="nextMonthGoogle" class="month-nav-btn">Next Month →</button>
+        </div>
+        
+        <div class="controls-row">
+          <div class="form-group">
+            <label for="googleTeamFilter">Filter by Team</label>
+            <select id="googleTeamFilter">
+              <option value="">All Teams</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="googleEmployeeFilter">Filter by Employee</label>
+            <select id="googleEmployeeFilter">
+              <option value="">All Employees</option>
+            </select>
+          </div>
+          
+          <button id="refreshGoogleData" class="refresh-btn">🔄 Refresh</button>
+        </div>
+        
+        <div class="roster-table-container">
+          <table id="googleRosterTable" class="roster-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>ID</th>
+                <th>Team</th>
+                <!-- Dates will be populated here -->
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Google data will be populated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="loadingGoogleData" class="loading-message">
+          Loading Google Sheets data...
+        </div>
+      </div>
+
+      <!-- Admin Data Tab -->
+      <div id="admin-data" class="tab-content">
+        <div class="tab-header">
+          <h2>Admin Modified Data (Editable)</h2>
+          <p>Make changes to shifts - these modifications will override Google data</p>
+        </div>
+        
+        <div class="data-source-info">
+          <div class="source-badge admin-badge">Admin Modified</div>
+          <p>Changes made here will be reflected in the main roster viewer. Click on any shift to edit it. <strong>Modified shifts are highlighted in blue.</strong></p>
+        </div>
+        
+        <div class="month-navigation">
+          <button id="prevMonthAdmin" class="month-nav-btn">← Previous Month</button>
+          <h3 id="currentMonthAdmin">January 2024</h3>
+          <button id="nextMonthAdmin" class="month-nav-btn">Next Month →</button>
+        </div>
+        
+        <div class="controls-row">
+          <div class="form-group">
+            <label for="adminTeamFilter">Filter by Team</label>
+            <select id="adminTeamFilter">
+              <option value="">All Teams</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="adminEmployeeFilter">Filter by Employee</label>
+            <select id="adminEmployeeFilter">
+              <option value="">All Employees</option>
+            </select>
+          </div>
+          
+          <button id="refreshAdminData" class="refresh-btn">🔄 Refresh</button>
+        </div>
+        
+        <div class="roster-table-container">
+          <table id="adminRosterTable" class="roster-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>ID</th>
+                <th>Team</th>
+                <!-- Dates will be populated here -->
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Admin data will be populated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="loadingAdminData" class="loading-message">
+          Loading admin modified data...
+        </div>
+      </div>
+
+      <!-- CSV Import Tab -->
+      <div id="csv-import" class="tab-content">
+        <div class="tab-header">
+          <h2>CSV Import</h2>
+          <p>Upload roster data using CSV files</p>
+        </div>
+        
+        <div class="import-section">
+          <div class="import-card">
+            <h3>📥 Upload CSV File</h3>
+            <p>Upload a CSV file to replace Google Sheets data. The file should follow the template format.</p>
+            
+            <form id="csvUploadForm" class="upload-form">
+              <div class="file-upload-area" id="fileUploadArea">
+                <div class="upload-placeholder">
+                  <span class="upload-icon">📄</span>
+                  <p>Drag & drop your CSV file here or click to browse</p>
+                  <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                  <button type="button" class="browse-btn">Browse Files</button>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                  <span id="fileName"></span>
+                  <button type="button" id="removeFile" class="remove-btn">×</button>
+                </div>
+              </div>
+              
+              <button type="submit" class="upload-btn" disabled>
+                <span>⬆️</span> Upload to Google Data
+              </button>
+            </form>
+            
+            <div id="uploadMessage" class="message"></div>
+          </div>
+          
+          <div class="template-card">
+            <h3>📋 Download Template</h3>
+            <p>Download the CSV template to ensure your file follows the correct format.</p>
+            <a href="{{ url_for('download_template') }}" class="download-btn">
+              <span>⬇️</span> Download Template
+            </a>
+            
+            <div class="template-notes">
+              <h4>Template Guidelines:</h4>
+              <ul>
+                <li>First row: Column headers (Team, Name, ID, Date columns)</li>
+                <li>Second row: Date row (leave first three columns empty)</li>
+                <li>Subsequent rows: Employee data with shift codes</li>
+                <li>Shift codes: M2, M3, M4, D1, D2, DO, SL, CL, EL</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="admin-footer">
+      <p>CxP Roster Admin Panel | Dual Data Storage | v2.0.0</p>
+    </footer>
+  </div>
+
+  <!-- Management Modals -->
+  <div id="teamModal" class="management-modal">
+    <div class="management-modal-content">
+      <div class="management-modal-header">
+        <h3 id="teamModalTitle">Add Team</h3>
+        <button class="management-modal-close">&times;</button>
+      </div>
+      <div class="management-modal-body">
+        <form id="teamForm" class="management-form">
+          <div class="form-group">
+            <label for="teamName">Team Name</label>
+            <input type="text" id="teamName" required>
+          </div>
+          <div class="management-modal-actions">
+            <button type="button" class="action-btn" id="cancelTeamBtn">Cancel</button>
+            <button type="submit" class="action-btn primary" id="saveTeamBtn">Save Team</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="employeeModal" class="management-modal">
+    <div class="management-modal-content">
+      <div class="management-modal-header">
+        <h3 id="employeeModalTitle">Add Employee</h3>
+        <button class="management-modal-close">&times;</button>
+      </div>
+      <div class="management-modal-body">
+        <form id="employeeForm" class="management-form">
+          <div class="form-group">
+            <label for="employeeName">Full Name</label>
+            <input type="text" id="employeeName" required>
+          </div>
+          <div class="form-group">
+            <label for="employeeId">Employee ID</label>
+            <input type="text" id="employeeId" required>
+          </div>
+          <div class="form-group">
+            <label for="employeeTeam">Team</label>
+            <select id="employeeTeam" required>
+              <option value="">Select Team</option>
+            </select>
+          </div>
+          <div class="management-modal-actions">
+            <button type="button" class="action-btn" id="cancelEmployeeBtn">Cancel</button>
+            <button type="submit" class="action-btn primary" id="saveEmployeeBtn">Save Employee</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="googleLinkModal" class="management-modal">
+    <div class="management-modal-content">
+      <div class="management-modal-header">
+        <h3 id="googleLinkModalTitle">Add Google Sheets Link</h3>
+        <button class="management-modal-close">&times;</button>
+      </div>
+      <div class="management-modal-body">
+        <form id="googleLinkForm" class="management-form">
+          <div class="form-group">
+            <label for="linkMonthYear">Month-Year (e.g., Sep-2024)</label>
+            <input type="text" id="linkMonthYear" placeholder="Sep-2024" required>
+          </div>
+          <div class="form-group">
+            <label for="googleLink">Google Sheets CSV Link</label>
+            <input type="url" id="googleLink" placeholder="https://docs.google.com/..." required>
+          </div>
+          <div class="management-modal-actions">
+            <button type="button" class="action-btn" id="cancelGoogleLinkBtn">Cancel</button>
+            <button type="submit" class="action-btn primary" id="saveGoogleLinkBtn">Save Link</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmationModal" class="management-modal">
+    <div class="management-modal-content">
+      <div class="management-modal-header">
+        <h3 id="confirmationModalTitle">Confirm Action</h3>
+        <button class="management-modal-close">&times;</button>
+      </div>
+      <div class="management-modal-body confirmation-modal">
+        <h3 id="confirmationMessage">Are you sure?</h3>
+        <p id="confirmationDetails">This action cannot be undone.</p>
+        <div class="management-modal-actions">
+          <button type="button" class="action-btn" id="cancelConfirmBtn">Cancel</button>
+          <button type="button" class="action-btn danger" id="confirmActionBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-schedule-requests.js') }}"></script>
+</body>
+</html>
